@@ -1,3 +1,9 @@
+/**
+ * Mock Data Service
+ * Provides mock data for development and testing
+ * This file contains all mock data used throughout the application
+ */
+
 import type { User, UserRole } from "../types/user";
 import type { Session } from "../types/session";
 import type { Subject, TutorProfile, TimeSlot } from '../types/booking';
@@ -9,6 +15,10 @@ import type { UserProfile } from '../types/profile';
 import type { CourseEnrollment } from '../types/enrollment';
 import type { CourseSyllabus } from '../types/syllabus';
 import type { TeachingPlan } from '../types/teachingPlan';
+
+// ============================================================================
+// MOCK USERS
+// ============================================================================
 
 export const MOCK_USERS: User[] = [
   {
@@ -788,8 +798,11 @@ export const createFeedback = async (request: CreateFeedbackRequest): Promise<Se
   return newFeedback;
 };
 
-// Get login activities for a user
-export const getLoginActivities = async (userId: string): Promise<LoginActivity[]> => {
+/**
+ * Get login activities for a user
+ * @param _userId - User ID (currently unused, all activities returned for demo)
+ */
+export const getLoginActivities = async (_userId: string): Promise<LoginActivity[]> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300));
   
@@ -797,8 +810,11 @@ export const getLoginActivities = async (userId: string): Promise<LoginActivity[
   return MOCK_LOGIN_ACTIVITIES;
 };
 
-// Get reports for a user
-export const getReports = async (userId: string): Promise<Report[]> => {
+/**
+ * Get reports for a user
+ * @param _userId - User ID (currently unused, all reports returned for demo)
+ */
+export const getReports = async (_userId: string): Promise<Report[]> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300));
   

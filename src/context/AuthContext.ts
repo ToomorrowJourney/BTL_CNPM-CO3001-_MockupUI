@@ -1,69 +1,123 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User, AuthState } from '../types/user';
 import { MOCK_USERS } from '../services/mockData';
-import { set } from 'date-fns';
 
+const API_DELAY_MS = 500;
+const STORAGE_KEY = 'user';
+
+/**
+ * Auth Context Type Definition
+ * Extends AuthState with methods for login/logout
+ */
 interface AuthContextType extends AuthState {
-    login: (email: string) => Promise<void>;
-    logout: () => void;
+  login: (email: string) => Promise<void>;
+  logout: () => void;
 }
 
+/**
+ * Create Auth Context
+ * Context for managing authentication state across the application
+ */
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =>  {
-    const [state, setState] = useState<AuthState>({
+/**
+ * AuthProvider Component
+ * Provides authentication context and manages auth state
+ */
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [state, setState] = useState<AuthState>({
+    user: null,
+    isAuthenticated: false,
+    isLoading: true,
+  });
+
+  /**
+   * Initialize auth state from localStorage on mount
+   */
+  useEffect(() => {
+    const initializeAuth = () => {
+      try {
+        const storedUser = localStorage.getItem(STORAGE_KEY);
+        if (storedUser) {
+          const user = JSON.parse(storedUser) as User;
+          setState({
+            user,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+        } else {
+          setState((prev) => ({ ...prev, isLoading: false }));
+        }
+      } catch (error) {
+        console.error('Failed to initialize auth:', error);
+        setState((prev) => ({ ...prev, isLoading: false }));
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
+  /**
+   * Login user
+   * @param email - User email to login with
+   */
+  const login = useCallback(async (email: string) => {
+    try {
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, API_DELAY_MS));
+
+      const user = MOCK_USERS.find((u) => u.email === email);
+
+      if (!user) {
+        throw new Error('Invalid credentials');
+      }
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+      setState({
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
+  }, []);
+
+  /**
+   * Logout current user
+   */
+  const logout = useCallback(() => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      setState({
         user: null,
         isAuthenticated: false,
-        isLoading: true,
-    });
+        isLoading: false,
+      });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  }, []);
 
-    // Check for existing session (mocked)
-    useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if ( storedUser ) {
-            setState({
-                user: JSON.parse(storedUser),
-                isAuthenticated: true,
-                isLoading: false,
-            });
-        }else {
-            setState(prev => ({ ...prev, isLoading: false }));
-        }
-    }, []);
+  const value: AuthContextType = {
+    ...state,
+    login,
+    logout,
+  };
 
-    const login = async (email: string) => {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const user = MOCK_USERS.find(u => u.email === email);
-
-        if ( user ) {
-            localStorage.setItem('user', JSON.stringify(user));
-            setState({
-                user,
-                isAuthenticated: true,
-                isLoading: false,
-            });
-        }else {
-            throw new Error('Invalid credentials');
-        }
-    };
-
-    const logout = () => {
-        localStorage.removeItem('user');
-        setState({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-        });
-    };
-    
-    return React.createElement(AuthContext.Provider, { value: { ...state, login, logout } }, children);
+  return React.createElement(AuthContext.Provider, { value }, children);
 };
 
-export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if ( context === undefined ) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
+/**
+ * useAuth Hook
+ * Custom hook to access auth context
+ * @throws Error if used outside of AuthProvider
+ */
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
